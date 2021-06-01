@@ -61,11 +61,20 @@ class SegDetectorVisualizer(Configurable):
             thresh_binary = self._visualize_heatmap(pred['thresh_binary'][index])
             MakeICDARData.polylines(self, thresh_binary, polygons, ignore_tags)
 
+
+
         for box in boxes:
-            box = np.array(box).astype(np.int32).reshape(-1, 2)
-            cv2.polylines(pred_canvas, [box], True, (0, 255, 0), 2)
-            if isinstance(pred, dict) and 'thresh_binary' in pred:
-                cv2.polylines(thresh_binary, [box], True, (0, 255, 0), 1) 
+
+            rect = cv2.minAreaRect(np.array(box))
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            cv2.drawContours(pred_canvas, [box], 0, (0, 255, 0), 2)
+
+
+        #     box = np.array(box).astype(np.int32).reshape(-1, 2)
+        #     cv2.polylines(pred_canvas, [box], True, (0, 255, 0), 2)
+        #     if isinstance(pred, dict) and 'thresh_binary' in pred:
+        #         cv2.polylines(thresh_binary, [box], True, (0, 255, 0), 1) 
 
         if self.eager_show:
             webcv2.imshow(filename + ' output', cv2.resize(pred_canvas, (1024, 1024)))

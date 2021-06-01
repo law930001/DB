@@ -1,4 +1,5 @@
 #!python3
+import cv2
 import argparse
 import os
 import torch
@@ -145,7 +146,12 @@ class Eval:
             if self.args['polygon']:
                 with open(result_file_path, 'wt') as res:
                     for i, box in enumerate(boxes):
-                        box = np.array(box).reshape(-1).tolist()
+
+                        rect = cv2.minAreaRect(np.array(box))
+                        box = cv2.boxPoints(rect)
+                        box = np.int0(box).reshape(-1).tolist()
+
+                        # box = np.array(box).reshape(-1).tolist()
                         result = ",".join([str(int(x)) for x in box])
                         score = scores[i]
                         res.write(result + ',' + str(score) + "\n")
@@ -183,6 +189,13 @@ class Eval:
 
                     if visualize and self.structure.visualizer:
                         vis_image = self.structure.visualizer.visualize(batch, output, pred)
+                        # file_name = list(vis_image)[0].split('img_')[1].split('.jpg')[0]
+                        # img = list(vis_image.values())[0]
+
+                        # blur_img = cv2.GaussianBlur(img, (0, 0), 200)
+                        # img = cv2.addWeighted(img, 1.5, blur_img, -0.5, 0)
+
+                        # cv2.imwrite('./visualize/{}.jpg'.format(file_name), img)
                         self.logger.save_image_dict(vis_image)
                         vis_images.update(vis_image)
                 metrics = self.structure.measurer.gather_measure(raw_metrics, self.logger)

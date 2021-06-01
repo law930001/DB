@@ -30,9 +30,9 @@ define:
   - name: validate_data
     class: ImageDataset
     data_dir:
-        - '/root/Storage/datasets/T-Brain/TrainDataset/'
+        - '/root/Storage/datasets/T-Brain/PublicTestDataset/'
     data_list:
-        - '/root/Storage/datasets/T-Brain/TrainDataset/train_list.txt'
+        - '/root/Storage/datasets/T-Brain/PublicTestDataset/test_list.txt'
     processes:
         - class: AugmentDetectionData
           augmenter_args:
