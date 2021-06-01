@@ -95,7 +95,6 @@ class DecayLearningRate(Configurable):
         self.load_all(**kwargs)
 
     def get_learning_rate(self, epoch, step=None):
-        self.lr = 0.0014
         rate = np.power(1.0 - epoch / float(self.epochs + 1), self.factor)
         return rate * self.lr
 
