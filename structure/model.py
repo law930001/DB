@@ -7,6 +7,9 @@ import torch.nn.functional as F
 import backbones
 import decoders
 
+from torchsummary import summary
+
+
 
 class BasicModel(nn.Module):
     def __init__(self, args):
@@ -14,6 +17,9 @@ class BasicModel(nn.Module):
 
         self.backbone = getattr(backbones, args['backbone'])(**args.get('backbone_args', {}))
         self.decoder = getattr(decoders, args['decoder'])(**args.get('decoder_args', {}))
+
+        # summary(self.decoder.to('cuda'), [(256,160,160),(512,80,80),(1024,40,40),(2048,20,20)])
+
 
     def forward(self, data, *args, **kwargs):
         return self.decoder(self.backbone(data), *args, **kwargs)
