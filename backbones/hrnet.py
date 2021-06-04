@@ -14,6 +14,8 @@ from torchvision.models.utils import load_state_dict_from_url
 
 import numpy as np
 
+from backbones.hrnet_config import MODEL_CONFIGS
+
 logger = logging.getLogger('hrnet_backbone')
 
 __all__ = ['hrnet18', 'hrnet32', 'hrnet48']
@@ -494,26 +496,29 @@ class HighResolutionNet(nn.Module):
                 x_list.append(y_list[i])
         x = self.stage4(x_list)
 
-        # Upsampling
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        ALIGN_CORNERS = True
-        x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
-        x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
-        x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
+        return x[0], x[1], x[2], x[3]
 
-        x = torch.cat([x[0], x1, x2, x3], 1)
+        # # Upsampling
+        # x0_h, x0_w = x[0].size(2), x[0].size(3)
+        # ALIGN_CORNERS = True
+        # x1 = F.interpolate(x[1], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
+        # x2 = F.interpolate(x[2], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
+        # x3 = F.interpolate(x[3], size=(x0_h, x0_w), mode='bilinear', align_corners=ALIGN_CORNERS)
 
-        x = self.last_layer(x)
+        # x = torch.cat([x[0], x1, x2, x3], 1)
 
-        return x
+        # x = self.last_layer(x)
+
+        # return x
 
 
 def _hrnet(arch, pretrained, progress, **kwargs):
-    try:
-        from hrnet_config import MODEL_CONFIGS
-    except ImportError:
-        print('hrnet_config error')
+    # try:
+    #     from hrnet_config import MODEL_CONFIGS
+    # except ImportError:
+    #     print('hrnet_config error')
     model = HighResolutionNet(MODEL_CONFIGS[arch], **kwargs)
+    pretrained = False
     if pretrained:
         model_url = model_urls[arch]
         state_dict = load_state_dict_from_url(model_url,

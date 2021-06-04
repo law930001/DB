@@ -1,5 +1,6 @@
 from .seg_detector import SegDetector
 from .seg_detector_res152 import SegDetector_res152
+from .seg_detector_hrnet import SegDetector_hrnet48
 from .dice_loss import DiceLoss
 from .pss_loss import PSS_Loss
 from .l1_loss import MaskL1Loss
