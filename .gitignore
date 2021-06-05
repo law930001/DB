@@ -5,4 +5,4 @@
 /workspace/
 /.vscode/
 __pycache__/
-*.py[cod]
+*.pyc
