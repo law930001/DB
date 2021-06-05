@@ -17,7 +17,7 @@ from training.optimizer_scheduler import OptimizerScheduler
 from concern.config import Configurable, Config
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def main():
     parser = argparse.ArgumentParser(description='Text Recognition Training')
