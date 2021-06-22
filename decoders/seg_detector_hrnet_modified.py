@@ -73,19 +73,37 @@ class SegDetector_hrnet48(nn.Module):
         self.l1_u3 = dsconv(inner_channels, inner_channels, 4)
         self.l1_u4 = dsconv(inner_channels, inner_channels, 8)
 
-        self.l2_u1 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.l2_u1 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.l2_u2 = dsconv(inner_channels, inner_channels, 1)
         self.l2_u3 = dsconv(inner_channels, inner_channels, 2)
         self.l2_u4 = dsconv(inner_channels, inner_channels, 4)
 
-        self.l3_u1 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.l3_u2 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.l3_u1 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.l3_u2 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.l3_u3 = dsconv(inner_channels, inner_channels, 1)
         self.l3_u4 = dsconv(inner_channels, inner_channels, 2)
 
-        self.l4_u1 = nn.Upsample(scale_factor=8, mode='nearest')
-        self.l4_u2 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.l4_u3 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.l4_u1 = nn.Sequential(
+            nn.Upsample(scale_factor=8, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.l4_u2 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.l4_u3 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.l4_u4 = dsconv(inner_channels, inner_channels, 1)
 
         # block2
@@ -94,19 +112,37 @@ class SegDetector_hrnet48(nn.Module):
         self.u1_d3 = dsconv(inner_channels, inner_channels, 4)
         self.u1_d4 = dsconv(inner_channels, inner_channels, 8)
 
-        self.u2_d1 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.u2_d1 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.u2_d2 = dsconv(inner_channels, inner_channels, 1)
         self.u2_d3 = dsconv(inner_channels, inner_channels, 2)
         self.u2_d4 = dsconv(inner_channels, inner_channels, 4)
 
-        self.u3_d1 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.u3_d2 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.u3_d1 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.u3_d2 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.u3_d3 = dsconv(inner_channels, inner_channels, 1)
         self.u3_d4 = dsconv(inner_channels, inner_channels, 2)
 
-        self.u4_d1 = nn.Upsample(scale_factor=8, mode='nearest')
-        self.u4_d2 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.u4_d3 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.u4_d1 = nn.Sequential(
+            nn.Upsample(scale_factor=8, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.u4_d2 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.u4_d3 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.u4_d4 = dsconv(inner_channels, inner_channels, 1)
 
         # block3
@@ -115,19 +151,37 @@ class SegDetector_hrnet48(nn.Module):
         self.d1_f3 = dsconv(inner_channels, inner_channels, 4)
         self.d1_f4 = dsconv(inner_channels, inner_channels, 8)
 
-        self.d2_f1 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.d2_f1 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.d2_f2 = dsconv(inner_channels, inner_channels, 1)
         self.d2_f3 = dsconv(inner_channels, inner_channels, 2)
         self.d2_f4 = dsconv(inner_channels, inner_channels, 4)
 
-        self.d3_f1 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.d3_f2 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.d3_f1 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.d3_f2 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.d3_f3 = dsconv(inner_channels, inner_channels, 1)
         self.d3_f4 = dsconv(inner_channels, inner_channels, 2)
 
-        self.d4_f1 = nn.Upsample(scale_factor=8, mode='nearest')
-        self.d4_f2 = nn.Upsample(scale_factor=4, mode='nearest')
-        self.d4_f3 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.d4_f1 = nn.Sequential(
+            nn.Upsample(scale_factor=8, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.d4_f2 = nn.Sequential(
+            nn.Upsample(scale_factor=4, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
+        self.d4_f3 = nn.Sequential(
+            nn.Upsample(scale_factor=2, mode='nearest'),
+            dsconv(inner_channels, inner_channels, 1)
+        )
         self.d4_f4 = dsconv(inner_channels, inner_channels, 1)
 
         self.out4 = nn.Sequential(
