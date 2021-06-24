@@ -1,3 +1,4 @@
+import os
 from os import listdir
 from os.path import isfile, join
 import json
@@ -19,17 +20,20 @@ def from_json():
 
 def make_list_txt():
 
-    root = "/root/Storage/datasets/T-Brain/PrivateTestDataset/"
+    root = "/root/Storage/datasets/ICDAR2015/test/"
 
-    with open(root + 'test_list.txt', 'w') as file:
-        for i in range(3001,5501):
+    with open(root + 'train_list.txt', 'w') as file:
+        for i in range(1,501):
             file.write('img_{}.jpg\n'.format(i))
 
 def make_gt_txt():
-    root = "/root/Storage/datasets/T-Brain/PrivateTestDataset/"
+    root = "/root/Storage/datasets/ICDAR2015/test/test_gts/"
+    dirs = listdir(root)
+    for file in dirs:
+        # print(root + file.lstrip('gt_').rstrip('.txt') + '.jpg.txt')
+        os.rename(root + file, root + file.lstrip('gt_').rstrip('.txt') + '.jpg.txt')
 
-    for i in range(3001, 5501):
-        open(root + 'test_gts/img_' + str(i) + '.jpg.txt', 'w')
+
 
 def to_one_list():
     with open('/root/Storage/DB_v100/submission.csv', 'w') as sub_file:
@@ -51,6 +55,8 @@ def to_one_list():
 
 
 if __name__ == '__main__':
-    # make_gt_txt()
-    to_one_list()
+    make_gt_txt()
+
+
+
     print("finish")
