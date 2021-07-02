@@ -5,4 +5,5 @@
 /workspace/
 /.vscode/
 __pycache__/
+/results_img/
 *.pyc
