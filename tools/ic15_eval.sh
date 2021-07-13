@@ -1,6 +1,7 @@
 cd ../
-CUDA_VISIBLE_DEVICES=2 \
-python eval.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml \
---resume /root/Storage/DB/workspace/SegDetectorModel-seg_detector/deformable_resnet50/L1BalanceCELoss/model/model_epoch_1200 \
+CUDA_VISIBLE_DEVICES=0 \
+python eval.py experiments/seg_detector/ic15_resnet152_deform_thre.yaml \
+--resume /root/Storage/DB_v100/model/5002/model_epoch_2272_minibatch_150000 \
 --polygon \
 --box_thresh 0.7
+# --thresh 0.4

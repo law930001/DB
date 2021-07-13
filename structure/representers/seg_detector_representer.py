@@ -168,6 +168,7 @@ class SegDetectorRepresenter(Configurable):
         return expanded
 
     def get_mini_boxes(self, contour):
+        # contour = contour.astype(np.int64)
         bounding_box = cv2.minAreaRect(contour)
         points = sorted(list(cv2.boxPoints(bounding_box)), key=lambda x: x[0])
 
