@@ -51,7 +51,7 @@ class ImageDataset(data.Dataset, Configurable):
                 # print(self.data_dir[i])
                 if 'TD500' in self.data_list[i] or 'total_text' in self.data_list[i]:
                     gt_path=[self.data_dir[i]+'/test_gts/'+timg.strip()+'.txt' for timg in image_list]
-                elif 'T-Brain' in self.data_list[i] or 'ICDAR2015' in self.data_list[i]:
+                elif 'T-Brain' in self.data_list[i] or 'ICDAR' in self.data_list[i]:
                     gt_path=[self.data_dir[i]+'/test_gts/'+timg.strip().split('.')[0]+'.jpg.txt' for timg in image_list]
                 else:
                     gt_path=[self.data_dir[i]+'/test_gts/'+'gt_'+timg.strip().split('.')[0]+'.txt' for timg in image_list]
@@ -91,10 +91,12 @@ class ImageDataset(data.Dataset, Configurable):
                     item = {}
                     parts = line.strip().split(',')
                     label = parts[-1]
+                    if label == '':
+                        lable = 'XXX'
                     if 'TD' in self.data_dir[0] and label == '1':
                         label = '###'
                     line = [i.strip('\ufeff').strip('\xef\xbb\xbf') for i in parts]
-                    if 'icdar' in self.data_dir[0]:
+                    if 'ICDAR' in self.data_dir[0]:
                         poly = np.array(list(map(float, line[:8]))).reshape((-1, 2)).tolist()
                     else:
                         num_points = math.floor((len(line) - 1) / 2) * 2

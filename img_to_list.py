@@ -34,12 +34,20 @@ def make_gt_txt():
         os.rename(root + file, root + file.lstrip('gt_').rstrip('.txt') + '.jpg.txt')
 
 
+def rename_result():
+    root = "/root/Storage/DB_v100/results/"
+    dirs = listdir(root)
+    for file in dirs:
 
+        result = 'res_img_' + file.split('_')[2].split('.')[0].zfill(5) + '.txt'
+
+        print(result)
+        os.rename(root + file, root + result)
 
 if __name__ == '__main__':
-    make_list_txt()
+    # make_list_txt()
     # make_gt_txt()
-
+    rename_result()
 
 
     print("finish")

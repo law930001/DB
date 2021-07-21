@@ -11,7 +11,7 @@ define:
             model: SegDetectorModel
             model_args:
                 backbone: deformable_resnet50
-                decoder: SegDetector
+                decoder: SegDetector_hrnet48
                 decoder_args: 
                     adaptive: True
                     in_channels: [256, 512, 1024, 2048]
