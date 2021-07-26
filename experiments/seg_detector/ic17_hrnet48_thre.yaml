@@ -11,7 +11,7 @@ define:
             model: SegDetectorModel
             model_args:
                 backbone: hrnet48
-                decoder: SegDetector_hrnet48
+                decoder: SegDetector_hrnet48_v1
                 decoder_args: 
                     adaptive: True
                     in_channels: [48, 96, 192, 384]
