@@ -10,11 +10,11 @@ define:
             class: Builder
             model: SegDetectorModel
             model_args:
-                backbone: hrnet48
+                backbone: efficentnet_b7
                 decoder: SegDetector_hrnet48_v1
                 decoder_args: 
                     adaptive: True
-                    in_channels: [48, 96, 192, 384]
+                    in_channels: [48, 80, 224, 640]
                     k: 50
                 loss_class: L1BalanceCELoss
         representer:
