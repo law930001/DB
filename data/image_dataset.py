@@ -124,10 +124,41 @@ class ImageDataset(data.Dataset, Configurable):
         data['image'] = img
         target = self.targets[index]
         data['lines'] = target
+
+        # cv2.imwrite('0_origin_image.jpg', data['image'])
+
+
         if self.processes is not None:
             for data_process in self.processes:
                 data = data_process(data)
+
+                # cv2.imwrite('1_image.jpg', data['image'])
+
+        # cv2.imwrite('1_image.jpg', self.denormalize(data['image']))
+        # cv2.imwrite('2_gt.jpg', self.denormalize(data['gt'][0]))
+        # cv2.imwrite('3_mask.jpg', self.denormalize(data['mask']))
+        # cv2.imwrite('4_thresh_map.jpg', self.denormalize(data['thresh_map']))
+        # cv2.imwrite('5_thresh_mask.jpg', self.denormalize(data['thresh_mask']))
+
+
+
         return data
+
+    def denormalize(self, image):
+        RGB_MEAN = np.array([122.67891434, 116.66876762, 104.00698793])
+
+        if len(image.shape) == 3:
+            image = image.permute(1, 2, 0).to('cpu').numpy()
+            image = image * 255.
+            image += RGB_MEAN
+            
+        else:
+            image = image.reshape((image.shape[0], image.shape[1], 1))
+            image = image * 255.
+
+        image = image.astype(np.uint8)
+
+        return image
 
     def __len__(self):
         return len(self.image_paths)
