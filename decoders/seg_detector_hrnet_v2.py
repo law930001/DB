@@ -3,6 +3,10 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 
+import numpy as np
+import cv2
+from concern.visualizer import Visualize
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -375,6 +379,22 @@ class SegDetector_hrnet48_v2(nn.Module):
         p4 = self.out4(f4)
         p5 = self.out5(f5)
 
+        # heatmap = Visualize.visualize_heatmap(p1.squeeze(0))
+
+
+        # # heatmap = p1.cpu().detach().numpy()
+        # # heatmap = np.mean(heatmap, axis=0)
+    
+        # # heatmap = np.maximum(heatmap, 0)
+        # # heatmap /= np.max(heatmap)
+
+        # # heatmap = cv2.resize(heatmap, (640, 640))
+        # # heatmap = np.uint8(255 * heatmap)
+
+
+        # # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        # # # superimposed_img = heatmap * 0.4 + img
+        # cv2.imwrite('heatmap.jpg', heatmap)
 
         fuse = torch.cat((p1, p2, p3, p4, p5), 1)
         # this is the pred module, not binarization module; 

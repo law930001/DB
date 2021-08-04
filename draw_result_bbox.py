@@ -75,9 +75,9 @@ def draw_result_image_ans():
         cv2.imwrite(result_img_dir + 'res_img_' + str(img_num) + '_ans.jpg', img)
 
 def draw_result_and_ans_image():
-    image_dir = '/root/Storage/datasets/ICDAR2017/test/test_images/'
+    image_dir = '/root/Storage/datasets/ICDAR2015/test/test_images/'
 
-    ans_dir = '/root/Storage/datasets/ICDAR2017/test/test_gts/'
+    ans_dir = '/root/Storage/datasets/ICDAR2015/test/test_gts/'
     result_dir = '/root/Storage/DB_v100/results/'
 
     result_img_dir = '/root/Storage/DB_v100/results_img/'
@@ -92,7 +92,7 @@ def draw_result_and_ans_image():
         img = cv2.imread(image_dir + 'img_' + str(img_num) + '.jpg')
 
         # print(img_num)
-        with open(result_dir + 'res_img_' + str(img_num).zfill(5) + '.txt', 'r') as res_file:
+        with open(result_dir + 'res_img_' + str(img_num) + '.txt', 'r') as res_file:
             for line in res_file.readlines():
                 line = line.strip().split(',')
                 del line[-1]
