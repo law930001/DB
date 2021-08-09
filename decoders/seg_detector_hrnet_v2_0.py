@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from dwconv import dwconv
 
 import torch
 import torch.nn as nn
@@ -35,6 +36,62 @@ class dsconv(nn.Module):
 
         return out
 
+class FPN_layer(nn.Module):
+    def __init__(self, inner_channels=256): 
+        super(FPN_layer, self).__init__()
+
+        # main Layer
+        self.L1 = dsconv(inner_channels, inner_channels, 1)
+        self.L2 = dsconv(inner_channels, inner_channels, 1)
+        self.L3 = dsconv(inner_channels, inner_channels, 1)
+        self.L4 = dsconv(inner_channels, inner_channels, 1)
+        
+        # mid layer
+        self.E1 = dsconv(inner_channels, inner_channels, 1)
+        self.E2 = dsconv(inner_channels, inner_channels, 1)
+        self.E3 = dsconv(inner_channels, inner_channels, 1)
+
+        # upsample
+        self.U1 = nn.Upsample(size=120, mode='nearest')
+        self.U2 = nn.Upsample(size=60, mode='nearest')
+        self.U3 = nn.Upsample(size=30, mode='nearest')
+
+        self.UU1 = nn.Upsample(size=160, mode='nearest')
+        self.UU2 = nn.Upsample(size=80, mode='nearest')
+        self.UU3 = nn.Upsample(size=40, mode='nearest')
+
+        # pooling
+        self.D1 = nn.AdaptiveAvgPool2d(120)
+        self.D2 = nn.AdaptiveAvgPool2d(60)
+        self.D3 = nn.AdaptiveAvgPool2d(30)
+
+        self.DD1 = nn.AdaptiveAvgPool2d(80)
+        self.DD2 = nn.AdaptiveAvgPool2d(40)
+        self.DD3 = nn.AdaptiveAvgPool2d(20)
+
+    def forward(self, features):
+
+        l1, E1, l2, E2, l3, E3, l4 = features
+
+        l1 = self.L1(l1 + self.UU1(E1))
+        l2 = self.L2(self.DD1(E1) + l2 + self.UU2(E2))
+        l3 = self.L3(self.DD2(E2) + l3 + self.UU3(E3))
+        l4 = self.L4(self.DD3(E3) + l4)
+
+        E1 = self.E1(self.D1(l1) + E1 + self.U1(l2))
+        E2 = self.E2(self.D2(l2) + E2 + self.U2(l3))
+        E3 = self.E3(self.D3(l3) + E3 + self.U3(l4))
+
+        l1 = l1 + self.UU1(E1)
+        l2 = self.DD1(E1) + l2 + self.UU2(E2)
+        l3 = self.DD2(E2) + l3 + self.UU3(E3)
+        l4 = self.DD3(E3) + l4
+
+        output = l1, E1, l2, E2, l3, E3, l4
+
+        return output
+
+
 class SegDetector_hrnet48_v2_0(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
@@ -56,238 +113,70 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         self.in2 = nn.Conv2d(in_channels[1], inner_channels, 1, bias=bias)
         self.in3 = nn.Conv2d(in_channels[2], inner_channels, 1, bias=bias)
         self.in4 = nn.Conv2d(in_channels[3], inner_channels, 1, bias=bias)
-        self.in5 = nn.Conv2d(768, inner_channels, 1, bias=bias)
 
         self.in1.apply(weights_init)
         self.in2.apply(weights_init)
         self.in3.apply(weights_init)
         self.in4.apply(weights_init)
-        self.in5.apply(weights_init)
 
         # upsample
-        self.up_2 = nn.Upsample(scale_factor=2, mode='nearest')
+        self.u_1 = nn.Upsample(size=120, mode='nearest')
+        self.u_2 = nn.Upsample(size=60, mode='nearest')
+        self.u_3 = nn.Upsample(size=30, mode='nearest')
 
-        # downsample
+        # pooling
+        self.d_1 = nn.AdaptiveAvgPool2d(120)
+        self.d_2 = nn.AdaptiveAvgPool2d(60)
+        self.d_3 = nn.AdaptiveAvgPool2d(30)
 
-        self.l5 = nn.Conv2d(384, 768, 3, stride=(2,2), padding=(1,1), bias=bias)
+        # expansion layer
+        self.E1 = dsconv(inner_channels, inner_channels, 1)
+        self.E2 = dsconv(inner_channels, inner_channels, 1)
+        self.E3 = dsconv(inner_channels, inner_channels, 1)
 
-        self.d1 = dsconv(inner_channels, inner_channels, 2)
-        self.d2 = dsconv(inner_channels, inner_channels, 2)
-        self.d3 = dsconv(inner_channels, inner_channels, 2)
-        self.d4 = dsconv(inner_channels, inner_channels, 2)
-
-        # block 1
-        self.l1_u1 = dsconv(inner_channels, inner_channels, 1)
-        self.l1_u2 = dsconv(inner_channels, inner_channels, 2)
-        self.l1_u3 = dsconv(inner_channels, inner_channels, 4)
-        self.l1_u4 = dsconv(inner_channels, inner_channels, 8)
-        self.l1_u5 = dsconv(inner_channels, inner_channels, 16)
-
-
-        self.l2_u1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l2_u2 = dsconv(inner_channels, inner_channels, 1)
-        self.l2_u3 = dsconv(inner_channels, inner_channels, 2)
-        self.l2_u4 = dsconv(inner_channels, inner_channels, 4)
-        self.l2_u5 = dsconv(inner_channels, inner_channels, 8)
-
-        self.l3_u1 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l3_u2 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l3_u3 = dsconv(inner_channels, inner_channels, 1)
-        self.l3_u4 = dsconv(inner_channels, inner_channels, 2)
-        self.l3_u5 = dsconv(inner_channels, inner_channels, 4)
-
-        self.l4_u1 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l4_u2 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l4_u3 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l4_u4 = dsconv(inner_channels, inner_channels, 1)
-        self.l4_u5 = dsconv(inner_channels, inner_channels, 2)
-
-        self.l5_u1 = nn.Sequential(
-            nn.Upsample(scale_factor=16, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l5_u2 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l5_u3 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l5_u4 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.l5_u5 = dsconv(inner_channels, inner_channels, 1)
-
-        # block2
-        self.u1_d1 = dsconv(inner_channels, inner_channels, 1)
-        self.u1_d2 = dsconv(inner_channels, inner_channels, 2)
-        self.u1_d3 = dsconv(inner_channels, inner_channels, 4)
-        self.u1_d4 = dsconv(inner_channels, inner_channels, 8)
-        self.u1_d5 = dsconv(inner_channels, inner_channels, 16)
-
-        self.u2_d1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u2_d2 = dsconv(inner_channels, inner_channels, 1)
-        self.u2_d3 = dsconv(inner_channels, inner_channels, 2)
-        self.u2_d4 = dsconv(inner_channels, inner_channels, 4)
-        self.u2_d5 = dsconv(inner_channels, inner_channels, 8)
-
-        self.u3_d1 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u3_d2 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u3_d3 = dsconv(inner_channels, inner_channels, 1)
-        self.u3_d4 = dsconv(inner_channels, inner_channels, 2)
-        self.u3_d5 = dsconv(inner_channels, inner_channels, 4)
-
-        self.u4_d1 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u4_d2 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u4_d3 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u4_d4 = dsconv(inner_channels, inner_channels, 1)
-        self.u4_d5 = dsconv(inner_channels, inner_channels, 2)
-
-
-        self.u5_d1 = nn.Sequential(
-            nn.Upsample(scale_factor=16, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u5_d2 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u5_d3 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u5_d4 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.u5_d5 = dsconv(inner_channels, inner_channels, 1)
-
-
-        # block3
-        self.d1_f1 = dsconv(inner_channels, inner_channels, 1)
-        self.d1_f2 = dsconv(inner_channels, inner_channels, 2)
-        self.d1_f3 = dsconv(inner_channels, inner_channels, 4)
-        self.d1_f4 = dsconv(inner_channels, inner_channels, 8)
-        self.d1_f5 = dsconv(inner_channels, inner_channels, 16)
-
-        self.d2_f1 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d2_f2 = dsconv(inner_channels, inner_channels, 1)
-        self.d2_f3 = dsconv(inner_channels, inner_channels, 2)
-        self.d2_f4 = dsconv(inner_channels, inner_channels, 4)
-        self.d2_f5 = dsconv(inner_channels, inner_channels, 8)
-
-        self.d3_f1 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d3_f2 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d3_f3 = dsconv(inner_channels, inner_channels, 1)
-        self.d3_f4 = dsconv(inner_channels, inner_channels, 2)
-        self.d3_f5 = dsconv(inner_channels, inner_channels, 4)
-
-        self.d4_f1 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d4_f2 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d4_f3 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d4_f4 = dsconv(inner_channels, inner_channels, 1)
-        self.d4_f5 = dsconv(inner_channels, inner_channels, 2)
-
-        self.d5_f1 = nn.Sequential(
-            nn.Upsample(scale_factor=16, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d5_f2 = nn.Sequential(
-            nn.Upsample(scale_factor=8, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d5_f3 = nn.Sequential(
-            nn.Upsample(scale_factor=4, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d5_f4 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            dsconv(inner_channels, inner_channels, 1)
-        )
-        self.d5_f5 = dsconv(inner_channels, inner_channels, 1)
+        # FPN
+        self.R = 1
+        self.fpn_layer = []
+        for i in range(0, self.R):
+            self.fpn_layer.append(FPN_layer(inner_channels=inner_channels))
+        self.fpn = nn.Sequential(*self.fpn_layer)
 
 
         # out
+        self.out7 = nn.Sequential(
+            nn.Conv2d(inner_channels, 256 - (inner_channels //
+                      7 * 6), 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
+        self.out6 = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels //
+                      7, 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
         self.out5 = nn.Sequential(
-            nn.Conv2d(inner_channels, 256 - (inner_channels * 4 //
-                      5), 3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=16, mode='nearest'))
+            nn.Conv2d(inner_channels, inner_channels //
+                      7, 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
         self.out4 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
-                      5, 3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=8, mode='nearest'))
+                      7, 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
         self.out3 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
-                      5, 3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=4, mode='nearest'))
+                      7, 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
         self.out2 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
-                      5, 3, padding=1, bias=bias),
-            nn.Upsample(scale_factor=2, mode='nearest'))
+                      7, 3, padding=1, bias=bias),
+            nn.Upsample(size=160, mode='nearest'))
         self.out1 = nn.Conv2d(
-            inner_channels, inner_channels//5, 3, padding=1, bias=bias)
+            inner_channels, inner_channels//7, 3, padding=1, bias=bias)
 
         self.out1.apply(weights_init)
         self.out2.apply(weights_init)
         self.out3.apply(weights_init)
         self.out4.apply(weights_init)
         self.out5.apply(weights_init)
+        self.out6.apply(weights_init)
+        self.out7.apply(weights_init)
 
         self.binarize = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
@@ -346,57 +235,28 @@ class SegDetector_hrnet48_v2_0(nn.Module):
 
     def forward(self, features, gt=None, masks=None, training=False):
         l1, l2, l3, l4 = features
-        l5 = self.l5(l4)
-
 
         l1 = self.in1(l1)
         l2 = self.in2(l2)
         l3 = self.in3(l3)
         l4 = self.in4(l4)
-        l5 = self.in5(l5)
 
-        u5 = self.l1_u5(l1) + self.l2_u5(l2) + self.l3_u5(l3) + self.l4_u5(l4) + self.l5_u5(l5)
-        u4 = self.l1_u4(l1) + self.l2_u4(l2) + self.l3_u4(l3) + self.l4_u4(l4) + self.l5_u4(l5) + self.up_2(u5)
-        u3 = self.l1_u3(l1) + self.l2_u3(l2) + self.l3_u3(l3) + self.l4_u3(l4) + self.l5_u3(l5) + self.up_2(u4)
-        u2 = self.l1_u2(l1) + self.l2_u2(l2) + self.l3_u2(l3) + self.l4_u2(l4) + self.l5_u2(l5) + self.up_2(u3)
-        u1 = self.l1_u1(l1) + self.l2_u1(l2) + self.l3_u1(l3) + self.l4_u1(l4) + self.l5_u1(l5) + self.up_2(u2)
+        E1 = self.E1(self.d_1(l1) + self.u_1(l2))
+        E2 = self.E2(self.d_2(l2) + self.u_2(l3))
+        E3 = self.E3(self.d_3(l3) + self.u_3(l4))
 
-        d1 = self.u1_d1(u1) + self.u2_d1(u2) + self.u3_d1(u3) + self.u4_d1(u4) + self.u5_d1(u5)
-        d2 = self.u1_d2(u1) + self.u2_d2(u2) + self.u3_d2(u3) + self.u4_d2(u4) + self.u5_d2(u5) + self.d1(d1)
-        d3 = self.u1_d3(u1) + self.u2_d3(u2) + self.u3_d3(u3) + self.u4_d3(u4) + self.u5_d3(u5) + self.d2(d2)
-        d4 = self.u1_d4(u1) + self.u2_d4(u2) + self.u3_d4(u3) + self.u4_d4(u4) + self.u5_d4(u5) + self.d3(d3)
-        d5 = self.u1_d5(u1) + self.u2_d5(u2) + self.u3_d5(u3) + self.u4_d5(u4) + self.u5_d5(u5) + self.d4(d4)
+        input_features = l1, E1, l2, E2, l3, E3, l4
+        l1, E1, l2, E2, l3, E3, l4 = self.fpn(input_features)
 
-        f5 = self.d1_f5(d1) + self.d2_f5(d2) + self.d3_f5(d3) + self.d4_f5(d4) + self.d5_f5(d5)
-        f4 = self.d1_f4(d1) + self.d2_f4(d2) + self.d3_f4(d3) + self.d4_f4(d4) + self.d5_f4(d5) + self.up_2(f5)
-        f3 = self.d1_f3(d1) + self.d2_f3(d2) + self.d3_f3(d3) + self.d4_f3(d4) + self.d5_f3(d5) + self.up_2(f4)
-        f2 = self.d1_f2(d1) + self.d2_f2(d2) + self.d3_f2(d3) + self.d4_f2(d4) + self.d5_f2(d5) + self.up_2(f3)
-        f1 = self.d1_f1(d1) + self.d2_f1(d2) + self.d3_f1(d3) + self.d4_f1(d4) + self.d5_f1(d5) + self.up_2(f2)
+        p1 = self.out1(l1)
+        p2 = self.out2(E1)
+        p3 = self.out3(l2)
+        p4 = self.out4(E2)
+        p5 = self.out5(l3)
+        p6 = self.out6(E3)
+        p7 = self.out7(l4)
 
-        p1 = self.out1(f1)
-        p2 = self.out2(f2)
-        p3 = self.out3(f3)
-        p4 = self.out4(f4)
-        p5 = self.out5(f5)
-
-        # heatmap = Visualize.visualize_heatmap(p1.squeeze(0))
-
-
-        # # heatmap = p1.cpu().detach().numpy()
-        # # heatmap = np.mean(heatmap, axis=0)
-    
-        # # heatmap = np.maximum(heatmap, 0)
-        # # heatmap /= np.max(heatmap)
-
-        # # heatmap = cv2.resize(heatmap, (640, 640))
-        # # heatmap = np.uint8(255 * heatmap)
-
-
-        # # heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-        # # # superimposed_img = heatmap * 0.4 + img
-        # cv2.imwrite('heatmap.jpg', heatmap)
-
-        fuse = torch.cat((p1, p2, p3, p4, p5), 1)
+        fuse = torch.cat((p1, p2, p3, p4, p5, p6, p7), 1)
         # this is the pred module, not binarization module; 
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)

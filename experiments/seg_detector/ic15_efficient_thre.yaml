@@ -11,7 +11,7 @@ define:
             model: SegDetectorModel
             model_args:
                 backbone: efficentnet_b7
-                decoder: SegDetector_hrnet48_v1
+                decoder: SegDetector_hrnet48_v1_0
                 decoder_args: 
                     adaptive: True
                     in_channels: [48, 80, 224, 640]

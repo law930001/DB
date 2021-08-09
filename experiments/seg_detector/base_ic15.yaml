@@ -14,8 +14,8 @@ define:
           augmenter_args:
               - ['Fliplr', 0.5]
               - {'cls': 'Affine', 'rotate': [-10, 10]}
-              # - {'cls': 'Affine', 'translate_percent': [-0.1, 0.1]}
-              # - {'cls': 'Affine', 'shear': [-10, 10}
+              - {'cls': 'Affine', 'translate_percent': [-0.1, 0.1]}
+              - {'cls': 'Affine', 'shear': [-10, 10]}
               - ['Resize', [0.5, 3.0]]
           only_resize: False
           keep_ratio: False
