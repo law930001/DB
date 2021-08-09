@@ -35,7 +35,7 @@ class dsconv(nn.Module):
 
         return out
 
-class SegDetector_hrnet48_v2(nn.Module):
+class SegDetector_hrnet48_v2_0(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
                  inner_channels=256, k=10,
@@ -47,7 +47,7 @@ class SegDetector_hrnet48_v2(nn.Module):
         smooth: If true, use bilinear instead of deconv.
         serial: If true, thresh prediction will combine segmentation result as input.
         '''
-        super(SegDetector_hrnet48_v2, self).__init__()
+        super(SegDetector_hrnet48_v2_0, self).__init__()
         self.k = k
         self.serial = serial
 
