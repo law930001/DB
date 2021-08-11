@@ -51,27 +51,32 @@ class FPN_layer(nn.Module):
         self.E2 = dsconv(inner_channels, inner_channels, 1)
         self.E3 = dsconv(inner_channels, inner_channels, 1)
 
-        # upsample
-        self.U1 = nn.Upsample(size=120, mode='nearest')
-        self.U2 = nn.Upsample(size=60, mode='nearest')
-        self.U3 = nn.Upsample(size=30, mode='nearest')
+        x = 2048
+        y = 1152
 
-        self.UU1 = nn.Upsample(size=160, mode='nearest')
-        self.UU2 = nn.Upsample(size=80, mode='nearest')
-        self.UU3 = nn.Upsample(size=40, mode='nearest')
+        # upsample
+        self.U1 = nn.Upsample(size=(y * 3 // 16, x * 3 // 16), mode='nearest')
+        self.U2 = nn.Upsample(size=(y * 3 // 32, x * 3 // 32), mode='nearest')
+        self.U3 = nn.Upsample(size=(y * 3 // 64, x * 3 // 64), mode='nearest')
+
+        self.UU1 = nn.Upsample(size=(y // 4, x // 4), mode='nearest')
+        self.UU2 = nn.Upsample(size=(y // 8, x // 8), mode='nearest')
+        self.UU3 = nn.Upsample(size=(y // 16, x // 16), mode='nearest')
 
         # pooling
-        self.D1 = nn.AdaptiveAvgPool2d(120)
-        self.D2 = nn.AdaptiveAvgPool2d(60)
-        self.D3 = nn.AdaptiveAvgPool2d(30)
+        self.D1 = nn.AdaptiveAvgPool2d((y * 3 // 16, x * 3 // 16))
+        self.D2 = nn.AdaptiveAvgPool2d((y * 3 // 32, x * 3 // 32))
+        self.D3 = nn.AdaptiveAvgPool2d((y * 3 // 64, x * 3 // 64))
 
-        self.DD1 = nn.AdaptiveAvgPool2d(80)
-        self.DD2 = nn.AdaptiveAvgPool2d(40)
-        self.DD3 = nn.AdaptiveAvgPool2d(20)
+        self.DD1 = nn.AdaptiveAvgPool2d((y // 8, x // 8))
+        self.DD2 = nn.AdaptiveAvgPool2d((y // 16, x // 16))
+        self.DD3 = nn.AdaptiveAvgPool2d((y // 32, x // 32))
 
     def forward(self, features):
 
         l1, E1, l2, E2, l3, E3, l4 = features
+
+        UU1 = self.UU1(E1)
 
         l1 = self.L1(l1 + self.UU1(E1))
         l2 = self.L2(self.DD1(E1) + l2 + self.UU2(E2))
@@ -119,15 +124,18 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         self.in3.apply(weights_init)
         self.in4.apply(weights_init)
 
+        x = 2048
+        y = 1152
+
         # upsample
-        self.u_1 = nn.Upsample(size=120, mode='nearest')
-        self.u_2 = nn.Upsample(size=60, mode='nearest')
-        self.u_3 = nn.Upsample(size=30, mode='nearest')
+        self.u_1 = nn.Upsample(size=(y * 3 // 16, x * 3 // 16), mode='nearest')
+        self.u_2 = nn.Upsample(size=(y * 3 // 32, x * 3 // 32), mode='nearest')
+        self.u_3 = nn.Upsample(size=(y * 3 // 64, x * 3 // 64), mode='nearest')
 
         # pooling
-        self.d_1 = nn.AdaptiveAvgPool2d(120)
-        self.d_2 = nn.AdaptiveAvgPool2d(60)
-        self.d_3 = nn.AdaptiveAvgPool2d(30)
+        self.d_1 = nn.AdaptiveAvgPool2d((y * 3 // 16, x * 3 // 16))
+        self.d_2 = nn.AdaptiveAvgPool2d((y * 3 // 32, x * 3 // 32))
+        self.d_3 = nn.AdaptiveAvgPool2d((y * 3 // 64, x * 3 // 64))
 
         # expansion layer
         self.E1 = dsconv(inner_channels, inner_channels, 1)
@@ -146,27 +154,27 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         self.out7 = nn.Sequential(
             nn.Conv2d(inner_channels, 256 - (inner_channels //
                       7 * 6), 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out6 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       7, 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out5 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       7, 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out4 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       7, 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out3 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       7, 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out2 = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       7, 3, padding=1, bias=bias),
-            nn.Upsample(size=160, mode='nearest'))
+            nn.Upsample(size=(y // 4, x // 4), mode='nearest'))
         self.out1 = nn.Conv2d(
             inner_channels, inner_channels//7, 3, padding=1, bias=bias)
 
