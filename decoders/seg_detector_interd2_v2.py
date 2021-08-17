@@ -314,7 +314,7 @@ class InDv2SegDetector(nn.Module):
         if self.training:
             result = OrderedDict(binary=binary)
         else:
-            print("result.....",binary.shape)
+            # print("result.....",binary.shape)
             return binary
         if self.adaptive and self.training:
             if self.serial:

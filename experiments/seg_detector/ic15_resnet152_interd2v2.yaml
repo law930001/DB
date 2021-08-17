@@ -10,14 +10,13 @@ define:
             class: Builder
             model: SegDetectorModel
             model_args:
-                backbone: deformable_resnet152
+                backbone: resnet152
                 decoder: InDv2SegDetector
                 decoder_args: 
                     adaptive: True
                     in_channels: [256, 512, 1024, 2048]
                     k: 50
                 loss_class: L1BalanceCELoss
-                dataset: icdar15
 
         representer:
             class: SegDetectorRepresenter
