@@ -1,5 +1,5 @@
 import:
-    - 'experiments/seg_detector/base_ic17.yaml'
+    - 'experiments/seg_detector/base_ic15.yaml'
 package: []
 define:
   - name: 'Experiment'
@@ -10,13 +10,15 @@ define:
             class: Builder
             model: SegDetectorModel
             model_args:
-                backbone: hrnet48
-                decoder: SegDetector_hrnet48_v1_0
+                backbone: deformable_resnet152
+                decoder: InDv2SegDetector
                 decoder_args: 
                     adaptive: True
-                    in_channels: [48, 96, 192, 384]
+                    in_channels: [256, 512, 1024, 2048]
                     k: 50
                 loss_class: L1BalanceCELoss
+                dataset: icdar15
+
         representer:
             class: SegDetectorRepresenter
             max_candidates: 1000
@@ -29,8 +31,8 @@ define:
         data_loader: 
             class: DataLoader
             dataset: ^train_data
-            batch_size: 16
-            num_workers: 16
+            batch_size: 4
+            num_workers: 0
         checkpoint: 
             class: Checkpoint
             start_epoch: 0
@@ -39,7 +41,7 @@ define:
         model_saver: 
             class: ModelSaver
             dir_path: model
-            save_interval: 3000
+            save_interval: 250
             signal_path: save
         scheduler: 
             class: OptimizerScheduler
@@ -64,7 +66,7 @@ define:
                 collect_fn:
                     class: ICDARCollectFN
         visualize: false
-        interval: 4500
+        interval: 3000
         exempt: 1
 
     logger:
