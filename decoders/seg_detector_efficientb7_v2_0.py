@@ -8,6 +8,9 @@ import numpy as np
 import cv2
 from concern.visualizer import Visualize
 
+x = 2048
+y = 1152
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -51,8 +54,6 @@ class FPN_layer(nn.Module):
         self.E2 = dsconv(inner_channels, inner_channels, 1)
         self.E3 = dsconv(inner_channels, inner_channels, 1)
 
-        x = 2048
-        y = 1152
 
         # upsample
         self.U1 = nn.Upsample(size=(y * 3 // 16, x * 3 // 16), mode='nearest')
@@ -97,7 +98,7 @@ class FPN_layer(nn.Module):
         return output
 
 
-class SegDetector_hrnet48_v2_0(nn.Module):
+class SegDetector_efficientb7_v2_0(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
                  inner_channels=256, k=10,
@@ -109,7 +110,7 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         smooth: If true, use bilinear instead of deconv.
         serial: If true, thresh prediction will combine segmentation result as input.
         '''
-        super(SegDetector_hrnet48_v2_0, self).__init__()
+        super(SegDetector_efficientb7_v2_0, self).__init__()
         self.k = k
         self.serial = serial
 
@@ -124,8 +125,7 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         self.in3.apply(weights_init)
         self.in4.apply(weights_init)
 
-        x = 2048
-        y = 1152
+
 
         # upsample
         self.u_1 = nn.Upsample(size=(y * 3 // 16, x * 3 // 16), mode='nearest')
@@ -143,7 +143,7 @@ class SegDetector_hrnet48_v2_0(nn.Module):
         self.E3 = dsconv(inner_channels, inner_channels, 1)
 
         # FPN
-        self.R = 1
+        self.R = 2
         self.fpn_layer = []
         for i in range(0, self.R):
             self.fpn_layer.append(FPN_layer(inner_channels=inner_channels))
