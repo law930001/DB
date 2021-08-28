@@ -1,6 +1,6 @@
 cd ../
-python train.py experiments/seg_detector/totaltext_resnet50_deform_thre.yaml \
+CUDA_VISIBLE_DEVICES=0 \
+python train.py experiments/seg_detector/tt_efficient_thre.yaml \
 --num_gpus 1 \
---num_workers 0 \
---batch_size 5 \
---resume model/pre-trained-model-synthtext-resnet50
+--num_workers 10 \
+--batch_size 4
