@@ -85,7 +85,6 @@ class FPN_layer(nn.Module):
 
         l1, E1, l2, E2, l3, E3, l4 = features
 
-        # torch.cat((), 1)
         l1 = self.L1(torch.cat((l1, self.UU1(E1)), 1))
         l2 = self.L2(torch.cat((self.DD1(E1), l2, self.UU2(E2)), 1))
         l3 = self.L3(torch.cat((self.DD2(E2), l3, self.UU3(E3)), 1))
@@ -144,9 +143,9 @@ class SegDetector_efficientb7_v2_1(nn.Module):
         self.E2 = conv(inner_channels * 2, inner_channels, 1)
         self.E3 = conv(inner_channels * 2, inner_channels, 1)
 
-        E1_size = (x * 3 // 16, y * 3 // 16)
-        E2_size = (x * 3 // 32, y * 3 // 32)
-        E3_size = (x * 3 // 64, y * 3 // 64)
+        E1_size = (y * 3 // 16, x * 3 // 16)
+        E2_size = (y * 3 // 32, x * 3 // 32)
+        E3_size = (y * 3 // 64, x * 3 // 64)
 
         # upsample
         self.u_1 = nn.Upsample(size=E1_size, mode='bilinear')
