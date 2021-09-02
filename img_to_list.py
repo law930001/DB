@@ -6,24 +6,25 @@ import json
 
 def from_json():
 
-    root = "/root/Storage/datasets/T-Brain/PublicTestDataset/"
+    root = "/root/Storage/datasets/TBrain/train/"
 
-    for json_file in listdir(root + 'json'):
+    for json_file in listdir(root + 'json/'):
         print(json_file)
         with open(root + 'json/' + json_file) as file:
             data = json.load(file)
             with open(root + 'train_gts/' + json_file.replace('.json', '.jpg.txt'), 'w') as gt_file:
                 for shapes in data['shapes']:
-                    data = ','.join(str(int(x)) + ',' + str(int(y)) for x, y in shapes['points']) + ',null\n'
+                    shapes['label'] = 'null' if shapes['label'] == '' else shapes['label']
+                    data = ','.join(str(int(x)) + ',' + str(int(y)) for x, y in shapes['points']) + ',' + shapes['label'] + '\n'
                     gt_file.write(data)
-                    print(data)
+        # break
 
 def make_list_txt():
 
-    root = "/root/Storage/datasets/ICDAR2017/test/"
+    root = "/root/Storage/datasets/TBrain/train/"
 
-    with open(root + 'test_list.txt', 'w') as file:
-        for i in range(1,1801):
+    with open(root + 'train_list.txt', 'w') as file:
+        for i in range(1,4566):
             file.write('img_{}.jpg\n'.format(i))
 
 def make_gt_txt():
@@ -45,9 +46,9 @@ def rename_result():
         os.rename(root + file, root + result)
 
 if __name__ == '__main__':
-    # make_list_txt()
+    # from_json()
+    make_list_txt()
     # make_gt_txt()
-    rename_result()
-
+    # rename_result()
 
     print("finish")
