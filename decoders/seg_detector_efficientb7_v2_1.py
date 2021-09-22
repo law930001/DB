@@ -159,7 +159,7 @@ class SegDetector_efficientb7_v2_1(nn.Module):
         self.d_3 = nn.AdaptiveAvgPool2d(E3_size)
 
         # FPN
-        self.R = 3
+        self.R = 1
         self.fpn_layer = []
         for i in range(0, self.R):
             self.fpn_layer.append(FPN_layer(inner_channels=inner_channels))

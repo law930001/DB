@@ -84,7 +84,8 @@ class Demo:
         else:
             new_width = self.args['image_short_side']
             new_height = int(math.ceil(new_width / width * height / 32) * 32)
-        resized_img = cv2.resize(img, (new_width, new_height))
+        # resized_img = cv2.resize(img, (new_width, new_height))
+        resized_img = cv2.resize(img, (2048, 1152))
         return resized_img
         
     def load_image(self, image_path):
