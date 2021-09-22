@@ -10,10 +10,10 @@ import numpy as np
 import cv2
 from concern.visualizer import Visualize
 
-x = 640
-y = 640
-# x = 2048
-# y = 1152
+# x = 640
+# y = 640
+x = 2048
+y = 1152
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
