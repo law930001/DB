@@ -7,6 +7,7 @@ import numpy as np
 from experiment import Structure, Experiment
 from concern.config import Configurable, Config
 import math
+import natsort
 
 def main():
     parser = argparse.ArgumentParser(description='Text Recognition Training')
@@ -74,6 +75,9 @@ class Demo:
         states = torch.load(
             path, map_location=self.device)
         model.load_state_dict(states, strict=False)
+
+        # torch.save(model.state_dict(), 'model_best', _use_new_zipfile_serialization=False)
+
         print("Resumed from " + path)
 
     def resize_image(self, img):
@@ -88,8 +92,9 @@ class Demo:
         resized_img = cv2.resize(img, (2048, 1152))
         return resized_img
         
-    def load_image(self, image_path):
-        img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype('float32')
+    def load_image(self, mask_img):
+        # img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype('float32')
+        img = mask_img.astype('float32')
         original_shape = img.shape[:2]
         img = self.resize_image(img)
         img -= self.RGB_MEAN
@@ -124,26 +129,78 @@ class Demo:
                         res.write(result + ',' + str(score) + "\n")
         
     def inference(self, image_path, visualize=False):
+
+        TBrain_root = '/root/Storage/datasets/TBrain/public/img_public/'
+        csv_root = '/root/Storage/datasets/TBrain/public/Task2_Public_String_Coordinate.csv'
+
         self.init_torch_tensor()
         model = self.init_model()
         self.resume(model, self.model_path)
-        all_matircs = {}
         model.eval()
-        batch = dict()
-        batch['filename'] = [image_path]
-        img, original_shape = self.load_image(image_path)
-        batch['shape'] = [original_shape]
-        with torch.no_grad():
-            batch['image'] = img
-            pred = model.forward(batch, training=False)
-            output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
-            if not os.path.isdir(self.args['result_dir']):
-                os.mkdir(self.args['result_dir'])
-            self.format_output(batch, output)
 
-            if visualize and self.structure.visualizer:
-                vis_image = self.structure.visualizer.demo_visualize(image_path, output)
-                cv2.imwrite(os.path.join(self.args['result_dir'], image_path.split('/')[-1].split('.')[0]+'.jpg'), vis_image)
+        with open(csv_root, 'r') as csv_file:
+
+            for i, line in enumerate(csv_file.readlines()):
+
+                print(i + 1)
+
+                line_split = line.strip().split(',')
+
+                img_name = line_split[0]
+
+                img_root = TBrain_root + img_name + '.jpg'
+
+                ori_img = cv2.imread(img_root)
+
+                x_max = max(int(line_split[1]),int(line_split[3]),int(line_split[5]),int(line_split[7]))
+                y_max = max(int(line_split[2]),int(line_split[4]),int(line_split[6]),int(line_split[8]))
+                x_min = min(int(line_split[1]),int(line_split[3]),int(line_split[5]),int(line_split[7]))
+                y_min = min(int(line_split[2]),int(line_split[4]),int(line_split[6]),int(line_split[8]))
+
+                # crop image
+                # cropped = img[y_min:y_max, x_min:x_max]
+
+                # cv2.imwrite('cropped.jpg', cropped)
+                cv2.imwrite('img.jpg', ori_img)
+
+                mask = np.zeros(ori_img.shape)
+                mask[y_min:y_max, x_min:x_max] = 1
+
+                mask_img = ori_img * mask
+
+                # cv2.imwrite('mask_img.jpg', mask_img)
+
+
+                batch = dict()
+                batch['filename'] = [img_root]
+                img, original_shape = self.load_image(mask_img)
+                batch['shape'] = [original_shape]
+                with torch.no_grad():
+                    batch['image'] = img
+                    pred = model.forward(batch, training=False)
+                    output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
+                    if not os.path.isdir(self.args['result_dir']):
+                        os.mkdir(self.args['result_dir'])
+                    self.format_output(batch, output)
+                    temp = output[0][0]
+                    crop_list = []
+                    for line in temp:
+                        line = np.array(line)
+                        x_max = max(line[:,0])
+                        y_max = max(line[:,1])
+                        x_min = min(line[:,0])
+                        y_min = min(line[:,1])
+
+                        crop_list.append([x_max,y_max,x_min,y_min])
+
+                    for j, cp in enumerate(sorted(crop_list,key=lambda l:(l[2]+l[3]))):
+
+                        temp = ori_img[cp[3]:cp[1], cp[2]:cp[0]]
+                        cv2.imwrite('temp/' + str(i+1) + '_' + str(j+1) + '.jpg', temp)
+
+                    # if visualize and self.structure.visualizer:
+                    #     vis_image = self.structure.visualizer.demo_visualize('./img.jpg', output)
+                    #     cv2.imwrite(os.path.join(self.args['result_dir'], img_root.split('/')[-1].split('.')[0]+'.jpg'), vis_image)
 
 if __name__ == '__main__':
     main()

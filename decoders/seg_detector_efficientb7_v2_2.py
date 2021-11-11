@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 from torch.nn.functional import pad
+from decoders.neck.fpem_v2 import FPEM_v2
 from dwconv import dwconv
 
 import torch
@@ -10,10 +11,11 @@ import numpy as np
 import cv2
 from concern.visualizer import Visualize
 
-x = 640
-y = 640
-# x = 2048
-# y = 1152
+# x = 640
+# y = 640
+x = 2048
+y = 1152
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -111,7 +113,7 @@ class FPN_layer(nn.Module):
         return output
 
 
-class SegDetector_efficientb7_v2_1(nn.Module):
+class SegDetector_efficientb7_v2_2(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
                  inner_channels=256, k=10,
@@ -123,7 +125,7 @@ class SegDetector_efficientb7_v2_1(nn.Module):
         smooth: If true, use bilinear instead of deconv.
         serial: If true, thresh prediction will combine segmentation result as input.
         '''
-        super(SegDetector_efficientb7_v2_1, self).__init__()
+        super(SegDetector_efficientb7_v2_2, self).__init__()
         self.k = k
         self.serial = serial
         inner_channels = 128
@@ -168,6 +170,10 @@ class SegDetector_efficientb7_v2_1(nn.Module):
         # last conv1x1
 
         self.last_conv = nn.Conv2d(inner_channels, inner_channels, 1, bias=False)
+
+        # FPEMv2
+        self.fpem = FPEM_v2(in_channels=128, out_channels=128)
+
 
         # out
         self.out7 = nn.Sequential(
@@ -270,7 +276,10 @@ class SegDetector_efficientb7_v2_1(nn.Module):
         E3 = self.E3(torch.cat((self.d_3(l3), self.u_3(l4)), 1))
 
         input_features = l1, E1, l2, E2, l3, E3, l4
+        
         l1, E1, l2, E2, l3, E3, l4 = self.fpn(input_features)
+
+        l1, E1, l2, E2, l3, E3, l4 = self.fpem(l1, E1, l2, E2, l3, E3, l4)
 
         l1 = self.last_conv(l1)
         E1 = self.last_conv(E1)
