@@ -11,10 +11,10 @@ import numpy as np
 import cv2
 from concern.visualizer import Visualize
 
-# x = 640
-# y = 640
-x = 2048
-y = 1152
+x = 640
+y = 640
+# x = 2048
+# y = 1152
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -209,21 +209,21 @@ class SegDetector_efficientb7_v2_2(nn.Module):
 
         inner_channels = 256
         self.binarize = nn.Sequential(
-            nn.Conv2d(inner_channels, inner_channels //
-                      4, 3, padding=1, bias=bias),
+            nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
             nn.BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
+
             nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
             nn.BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
+
             nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
             nn.Sigmoid())
         self.binarize.apply(weights_init)
 
         self.adaptive = adaptive
         if adaptive:
-            self.thresh = self._init_thresh(
-                    inner_channels, serial=serial, smooth=smooth, bias=bias)
+            self.thresh = self._init_thresh(inner_channels, serial=serial, smooth=smooth, bias=bias)
             self.thresh.apply(weights_init)
 
 
@@ -233,8 +233,7 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         if serial:
             in_channels += 1
         self.thresh = nn.Sequential(
-            nn.Conv2d(in_channels, inner_channels //
-                      4, 3, padding=1, bias=bias),
+            nn.Conv2d(in_channels, inner_channels // 4, 3, padding=1, bias=bias),
             nn.BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
             self._init_upsample(inner_channels // 4, inner_channels//4, smooth=smooth, bias=bias),

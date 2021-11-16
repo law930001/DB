@@ -1,0 +1,27 @@
+import os
+import subprocess
+from natsort import natsorted
+
+def main():
+
+    model_root = '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/'
+
+    os.chdir('/root/Storage/DB_v100')
+
+    model_list = natsorted(os.listdir(model_root))
+    if 'final' in model_list:
+        model_list.remove('final')
+        model_list.append('final')
+
+    # print(model_list)
+
+    for model in reversed(model_list):
+        print(model)
+
+        subprocess.call(['python', 'eval.py', 'experiments/seg_detector/ic15_efficient_thre.yaml',
+            '--resume', '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/' + model,
+            '--polygon', '--box_thresh', '0.7'])
+
+
+if __name__ == '__main__':
+    main()
