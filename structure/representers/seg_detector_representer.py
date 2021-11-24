@@ -165,6 +165,7 @@ class SegDetectorRepresenter(Configurable):
         offset = pyclipper.PyclipperOffset()
         offset.AddPath(box, pyclipper.JT_ROUND, pyclipper.ET_CLOSEDPOLYGON)
         expanded = np.array(offset.Execute(distance))
+        # expanded = np.array(offset.Execute(0))
         return expanded
 
     def get_mini_boxes(self, contour):

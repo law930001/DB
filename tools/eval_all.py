@@ -15,12 +15,15 @@ def main():
 
     # print(model_list)
 
-    for model in reversed(model_list):
-        print(model)
+    try:
+        for model in reversed(model_list):
+            print(model)
 
-        subprocess.call(['python', 'eval.py', 'experiments/seg_detector/ic15_efficient_thre.yaml',
-            '--resume', '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/' + model,
-            '--polygon', '--box_thresh', '0.7'])
+            subprocess.call(['python', 'eval.py', 'experiments/seg_detector/ic15_efficient_thre.yaml',
+                '--resume', '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/' + model,
+                '--polygon', '--box_thresh', '0.6'])
+    except:
+        print('error')
 
 
 if __name__ == '__main__':

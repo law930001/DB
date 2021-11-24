@@ -139,6 +139,7 @@ class ImageDataset(data.Dataset, Configurable):
         # cv2.imwrite('3_mask.jpg', self.denormalize(data['mask']))
         # cv2.imwrite('4_thresh_map.jpg', self.denormalize(data['thresh_map']))
         # cv2.imwrite('5_thresh_mask.jpg', self.denormalize(data['thresh_mask']))
+        # cv2.imwrite('6_whole_gt.jpg', self.denormalize(data['whole_gt'][0]))
 
 
 

@@ -1,7 +1,7 @@
 from collections import OrderedDict
+from numpy.lib.type_check import imag
 
-from torch.nn.functional import bilinear, pad, upsample
-from decoders.neck.fpem_v2 import FPEM_v2
+from torch.nn.functional import pad
 from dwconv import dwconv
 
 import torch
@@ -15,7 +15,6 @@ from concern.visualizer import Visualize
 # y = 640
 x = 2048
 y = 1152
-
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -113,7 +112,7 @@ class FPN_layer(nn.Module):
         return output
 
 
-class SegDetector_efficientb7_v2_2(nn.Module):
+class SegDetector_efficientb7_v2_3(nn.Module):
     def __init__(self,
                  in_channels=[64, 128, 256, 512],
                  inner_channels=256, k=10,
@@ -125,10 +124,11 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         smooth: If true, use bilinear instead of deconv.
         serial: If true, thresh prediction will combine segmentation result as input.
         '''
-        super(SegDetector_efficientb7_v2_2, self).__init__()
+        super(SegDetector_efficientb7_v2_3, self).__init__()
         self.k = k
         self.serial = serial
         inner_channels = 128
+        self.R = 1
 
         # in channel
         self.in1 = nn.Conv2d(in_channels[0], inner_channels, 1, bias=bias)
@@ -161,7 +161,6 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         self.d_3 = nn.AdaptiveAvgPool2d(E3_size)
 
         # FPN
-        self.R = 1
         self.fpn_layer = []
         for i in range(0, self.R):
             self.fpn_layer.append(FPN_layer(inner_channels=inner_channels))
@@ -170,10 +169,6 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         # last conv1x1
 
         self.last_conv = nn.Conv2d(inner_channels, inner_channels, 1, bias=False)
-
-        # FPEMv2
-        self.fpem = FPEM_v2(in_channels=128, out_channels=128)
-
 
         # out
         self.out7 = nn.Sequential(
@@ -212,18 +207,30 @@ class SegDetector_efficientb7_v2_2(nn.Module):
             nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
             nn.BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
-
             nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
             nn.BatchNorm2d(inner_channels//4),
             nn.ReLU(inplace=True),
-
             nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
             nn.Sigmoid())
         self.binarize.apply(weights_init)
 
+
+        self.whole_binarize = nn.Sequential(
+            nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
+            nn.BatchNorm2d(inner_channels//4),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
+            nn.BatchNorm2d(inner_channels//4),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
+            nn.Sigmoid())
+        self.whole_binarize.apply(weights_init)
+
+
         self.adaptive = adaptive
         if adaptive:
-            self.thresh = self._init_thresh(inner_channels, serial=serial, smooth=smooth, bias=bias)
+            self.thresh = self._init_thresh(
+                    inner_channels, serial=serial, smooth=smooth, bias=bias)
             self.thresh.apply(weights_init)
 
 
@@ -275,10 +282,7 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         E3 = self.E3(torch.cat((self.d_3(l3), self.u_3(l4)), 1))
 
         input_features = l1, E1, l2, E2, l3, E3, l4
-        
         l1, E1, l2, E2, l3, E3, l4 = self.fpn(input_features)
-
-        l1, E1, l2, E2, l3, E3, l4 = self.fpem(l1, E1, l2, E2, l3, E3, l4)
 
         l1 = self.last_conv(l1)
         E1 = self.last_conv(E1)
@@ -300,14 +304,21 @@ class SegDetector_efficientb7_v2_2(nn.Module):
         # this is the pred module, not binarization module; 
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)
-
-        # m = nn.MaxPool2d(kernel_size=(18,18), stride=1, padding=18//2)
-        # binary = m(binary)
-
+        whole_binary = self.whole_binarize(fuse)
         if self.training:
-            result = OrderedDict(binary=binary)
+            result = OrderedDict(binary=binary, whole_binary=whole_binary)
         else:
+            # return binary
+
+            # thresh = self.thresh(fuse)
+
+            # cv2.imwrite('1_whole_binary.jpg', self.denormalize(whole_binary, 0))
+            # cv2.imwrite('2_binary.jpg', self.denormalize(binary, 0))
+            # cv2.imwrite('3_thresh.jpg', self.denormalize(thresh, 1))
+
             return binary
+
+
         if self.adaptive and self.training:
             if self.serial:
                 fuse = torch.cat(
@@ -320,3 +331,18 @@ class SegDetector_efficientb7_v2_2(nn.Module):
 
     def step_function(self, x, y):
         return torch.reciprocal(1 + torch.exp(-self.k * (x - y)))
+
+    def denormalize(self, image, value):
+
+        if len(image.shape) == 4:
+            image = image[0]
+            if value == 0:
+                image = image > 0.3
+            else:
+                image = image > 0.3
+            image = image.cpu().numpy()[0]
+            bitmap = (image*255).astype(np.uint8)
+
+
+
+        return bitmap

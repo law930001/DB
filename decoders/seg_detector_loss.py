@@ -192,12 +192,13 @@ class L1BalanceCELoss(nn.Module):
 
     def forward(self, pred, batch):
         bce_loss = self.bce_loss(pred['binary'], batch['gt'], batch['mask'])
-        metrics = dict(bce_loss=bce_loss)
+        whole_bce_loss = self.bce_loss(pred['whole_binary'], batch['whole_gt'], batch['mask'])
+        metrics = dict(bce_loss=bce_loss, whole_bce_loss=whole_bce_loss)
         if 'thresh' in pred:
             l1_loss, l1_metric = self.l1_loss(pred['thresh'], batch['thresh_map'], batch['thresh_mask'])
             dice_loss = self.dice_loss(pred['thresh_binary'], batch['gt'], batch['mask'])
             metrics['thresh_loss'] = dice_loss
-            loss = dice_loss + self.l1_scale * l1_loss + bce_loss * self.bce_scale
+            loss = dice_loss + self.l1_scale * l1_loss + bce_loss * self.bce_scale + whole_bce_loss * 5
             metrics.update(**l1_metric)
         else:
             loss = bce_loss
