@@ -9,5 +9,6 @@
 /demo_results/
 /results_heatmap_img/
 /Total_text_eval/
-*.py[cod]
-assets/ops/
+
+**/*.pyc
+**/__pycache__
