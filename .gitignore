@@ -4,10 +4,10 @@
 /model/
 /workspace/
 /.vscode/
-__pycache__/
 /results_img/
-*.pyc
 /PaddleOCR/
 /demo_results/
 /results_heatmap_img/
 /Total_text_eval/
+*.py[cod]
+assets/ops/
