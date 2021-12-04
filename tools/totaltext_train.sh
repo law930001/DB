@@ -1,6 +1,6 @@
 cd ../
 CUDA_VISIBLE_DEVICES=0 \
-python train.py experiments/seg_detector/tt_efficient_thre.yaml \
+python train.py experiments/seg_detector/tt_resnet50_deform_thre.yaml \
 --num_gpus 1 \
 --num_workers 10 \
 --batch_size 3
