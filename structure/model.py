@@ -3,6 +3,8 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import cv2
+import numpy as np
 
 import backbones
 import decoders
@@ -59,7 +61,21 @@ class SegDetectorModel(nn.Module):
         else:
             data = batch.to(self.device)
         data = data.float()
-        pred = self.model(data, training=self.training)
+
+        if self.training:
+            pred = self.model(data, training=self.training)
+        else:
+            # pred = self.model(data, training=self.training)
+            pred, pred_whole = self.model(data, training=self.training)
+
+        # file_num = batch['filename'][0].replace('img', '').replace('.jpg', '')
+        # file_w, file_h = batch['shape'][0]
+
+        # cv2.imwrite('results_heatmap_img/' + str(file_num) + '_binary.jpg', 
+        #             cv2.resize(self.denormalize(pred, 0), (file_h,file_w)))
+        # cv2.imwrite('results_heatmap_img/' + str(file_num) + '_whole_binary.jpg', 
+        #             cv2.resize(self.denormalize(pred_whole, 0), (file_h,file_w)))
+
 
         if self.training:
             for key, value in batch.items():
@@ -70,3 +86,18 @@ class SegDetectorModel(nn.Module):
             loss, metrics = loss_with_metrics
             return loss, pred, metrics
         return pred
+
+    def denormalize(self, image, value):
+
+        if len(image.shape) == 4:
+            image = image[0]
+            if value == 0:
+                image = image > 0.3
+            else:
+                image = image > 0.3
+            image = image.cpu().numpy()[0]
+            bitmap = (image*255).astype(np.uint8)
+
+
+
+        return bitmap

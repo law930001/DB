@@ -8,6 +8,7 @@ import numpy as np
 import glob
 from concern.config import Configurable, State
 import math
+import mmcv
 
 class ImageDataset(data.Dataset, Configurable):
     r'''Dataset reading from images.
@@ -132,7 +133,10 @@ class ImageDataset(data.Dataset, Configurable):
             for data_process in self.processes:
                 data = data_process(data)
 
-                # cv2.imwrite('1_image.jpg', data['image'])
+
+        # data = self.emb(data)
+
+
 
         # cv2.imwrite('1_image.jpg', self.denormalize(data['image']))
         # cv2.imwrite('2_gt.jpg', self.denormalize(data['gt'][0]))
@@ -144,6 +148,15 @@ class ImageDataset(data.Dataset, Configurable):
 
 
         return data
+
+
+    def emb(self, data):
+        
+
+
+
+        return data
+
 
     def denormalize(self, image):
         RGB_MEAN = np.array([122.67891434, 116.66876762, 104.00698793])

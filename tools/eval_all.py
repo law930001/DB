@@ -19,8 +19,8 @@ def main():
         for model in reversed(model_list):
             print(model)
 
-            subprocess.call(['python', 'eval.py', 'experiments/seg_detector/ic15_efficient_thre.yaml',
-                '--resume', '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/' + model,
+            subprocess.call(['python', 'eval.py', 'experiments/seg_detector/tt_efficient_thre.yaml',
+                '--resume', model_root + model,
                 '--polygon', '--box_thresh', '0.6'])
     except:
         print('error')

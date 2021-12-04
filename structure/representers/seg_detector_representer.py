@@ -3,6 +3,7 @@ import numpy as np
 from shapely.geometry import Polygon
 import pyclipper
 from concern.config import Configurable, State
+import copy
 
 class SegDetectorRepresenter(Configurable):
     thresh = State(default=0.3)
@@ -79,6 +80,16 @@ class SegDetectorRepresenter(Configurable):
             (bitmap*255).astype(np.uint8),
             cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
+
+        # ori_contours_count = len(contours)
+        # print('ori: ', ori_contours_count)
+        # ori_contours = copy.deepcopy(contours)
+
+        # ori = np.zeros(bitmap.shape)
+        # cv2.drawContours(ori, ori_contours, -1, (255,255,255), -1)
+        # cv2.imwrite('1_ori.jpg', ori) 
+
+
         for contour in contours[:self.max_candidates]:
             epsilon = 0.01 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
@@ -93,7 +104,7 @@ class SegDetectorRepresenter(Configurable):
                 continue
             
             if points.shape[0] > 2:
-                box = self.unclip(points, unclip_ratio=2.0)
+                box = self.unclip(points, unclip_ratio=2.0) # 2.0
                 if len(box) > 1:
                     continue
             else:
@@ -113,6 +124,15 @@ class SegDetectorRepresenter(Configurable):
                 np.round(box[:, 1] / height * dest_height), 0, dest_height)
             boxes.append(box.tolist())
             scores.append(score)
+
+        # new_contours = np.zeros(bitmap.shape)
+        # for box in boxes:
+        #     cv2.drawContours(new_contours, np.array([box]), -1, (255,255,255), -1)
+        # cv2.imwrite('2_after.jpg', new_contours) 
+        # _, contours, _ = cv2.findContours((new_contours*255).astype(np.uint8),cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
+        # print(len(contours))
+
         return boxes, scores
 
     def boxes_from_bitmap(self, pred, _bitmap, dest_width, dest_height):

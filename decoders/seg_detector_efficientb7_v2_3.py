@@ -13,8 +13,13 @@ from concern.visualizer import Visualize
 
 # x = 640
 # y = 640
-x = 2048
-y = 1152
+
+x = 1280
+y = 736
+
+# x = 2048
+# y = 1152
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -312,11 +317,16 @@ class SegDetector_efficientb7_v2_3(nn.Module):
 
             # thresh = self.thresh(fuse)
 
-            # cv2.imwrite('1_whole_binary.jpg', self.denormalize(whole_binary, 0))
-            # cv2.imwrite('2_binary.jpg', self.denormalize(binary, 0))
+            # global counter
+
+            # cv2.imwrite('results_heatmap_img/' + str(counter) + '_whole_binary.jpg', self.denormalize(whole_binary, 0))
+            # cv2.imwrite('results_heatmap_img/' + str(counter) + '_binary.jpg', self.denormalize(binary, 0))
             # cv2.imwrite('3_thresh.jpg', self.denormalize(thresh, 1))
 
-            return binary
+            # counter += 1
+
+
+            return binary, whole_binary
 
 
         if self.adaptive and self.training:

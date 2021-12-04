@@ -6,6 +6,7 @@ from .seg_detector_efficientb7_v2_0 import SegDetector_efficientb7_v2_0
 from .seg_detector_efficientb7_v2_1 import SegDetector_efficientb7_v2_1
 from .seg_detector_efficientb7_v2_2 import SegDetector_efficientb7_v2_2
 from .seg_detector_efficientb7_v2_3 import SegDetector_efficientb7_v2_3
+from .seg_detector_efficientb7_v2_4 import SegDetector_efficientb7_v2_4
 from .seg_detector_interd2_v2 import InDv2SegDetector
 
 from .dice_loss import DiceLoss
