@@ -9,5 +9,9 @@
 /demo_results/
 /results_heatmap_img/
 /Total_text_eval/
+
+/assets/ops/dcn/build
+
+**/*.so
 **/*.pyc
 **/__pycache__
