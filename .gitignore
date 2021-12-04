@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 /PaddleOCR/
 /demo_results/
+/results_heatmap_img/
+/Total_text_eval/
