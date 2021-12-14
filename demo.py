@@ -7,7 +7,8 @@ import numpy as np
 from experiment import Structure, Experiment
 from concern.config import Configurable, Config
 import math
-import natsort
+from natsort import natsorted
+from tqdm import tqdm
 
 def main():
     parser = argparse.ArgumentParser(description='Text Recognition Training')
@@ -130,77 +131,64 @@ class Demo:
         
     def inference(self, image_path, visualize=False):
 
-        TBrain_root = '/root/Storage/datasets/TBrain/public/img_public/'
-        csv_root = '/root/Storage/datasets/TBrain/public/Task2_Public_String_Coordinate.csv'
+        TBrain_root = '/root/Storage/datasets/TBrain3/public/'
+        csv_root = '/root/Storage/DB_v100/result1.csv'
 
         self.init_torch_tensor()
         model = self.init_model()
         self.resume(model, self.model_path)
         model.eval()
 
-        with open(csv_root, 'r') as csv_file:
-
-            for i, line in enumerate(csv_file.readlines()):
-
-                print(i + 1)
-
-                line_split = line.strip().split(',')
-
-                img_name = line_split[0]
-
-                img_root = TBrain_root + img_name + '.jpg'
+        with open(csv_root, 'w') as csv_file:
+            for file in tqdm(natsorted(os.listdir(TBrain_root))):
+                
+                img_root = TBrain_root + file
 
                 ori_img = cv2.imread(img_root)
 
-                x_max = max(int(line_split[1]),int(line_split[3]),int(line_split[5]),int(line_split[7]))
-                y_max = max(int(line_split[2]),int(line_split[4]),int(line_split[6]),int(line_split[8]))
-                x_min = min(int(line_split[1]),int(line_split[3]),int(line_split[5]),int(line_split[7]))
-                y_min = min(int(line_split[2]),int(line_split[4]),int(line_split[6]),int(line_split[8]))
-
-                # crop image
-                # cropped = img[y_min:y_max, x_min:x_max]
-
-                # cv2.imwrite('cropped.jpg', cropped)
-                cv2.imwrite('img.jpg', ori_img)
-
-                mask = np.zeros(ori_img.shape)
-                mask[y_min:y_max, x_min:x_max] = 1
-
-                mask_img = ori_img * mask
-
-                # cv2.imwrite('mask_img.jpg', mask_img)
-
-
                 batch = dict()
                 batch['filename'] = [img_root]
-                img, original_shape = self.load_image(mask_img)
+                img, original_shape = self.load_image(ori_img)
                 batch['shape'] = [original_shape]
                 with torch.no_grad():
                     batch['image'] = img
                     pred = model.forward(batch, training=False)
                     output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
-                    if not os.path.isdir(self.args['result_dir']):
-                        os.mkdir(self.args['result_dir'])
-                    self.format_output(batch, output)
-                    temp = output[0][0]
-                    crop_list = []
-                    for line in temp:
-                        line = np.array(line)
-                        x_max = max(line[:,0])
-                        y_max = max(line[:,1])
-                        x_min = min(line[:,0])
-                        y_min = min(line[:,1])
 
-                        crop_list.append([x_max,y_max,x_min,y_min])
+                    for out in output[0][0]:
+                        box, _ = self.get_mini_boxes(np.array(out))
+                        csv_file.write(file.replace('.jpg', '') + ',')
+                        for b in box:
+                            csv_file.write(str(int(b[0])) + ',' + str(int(b[1])) + ',')
+                        csv_file.write('\n')
+                    csv_file.flush()
+                    
 
-                    for j, cp in enumerate(sorted(crop_list,key=lambda l:(l[2]+l[3]))):
+                # break
 
-                        temp = ori_img[cp[3]:cp[1], cp[2]:cp[0]]
-                        cv2.imwrite('temp/' + str(i+1) + '_' + str(j+1) + '.jpg', temp)
+    def get_mini_boxes(self, contour):
+        # contour = contour.astype(np.int64)
+        bounding_box = cv2.minAreaRect(contour)
+        points = sorted(list(cv2.boxPoints(bounding_box)), key=lambda x: x[0])
 
-                    # if visualize and self.structure.visualizer:
-                    #     vis_image = self.structure.visualizer.demo_visualize('./img.jpg', output)
-                    #     cv2.imwrite(os.path.join(self.args['result_dir'], img_root.split('/')[-1].split('.')[0]+'.jpg'), vis_image)
+        index_1, index_2, index_3, index_4 = 0, 1, 2, 3
+        if points[1][1] > points[0][1]:
+            index_1 = 0
+            index_4 = 1
+        else:
+            index_1 = 1
+            index_4 = 0
+        if points[3][1] > points[2][1]:
+            index_2 = 2
+            index_3 = 3
+        else:
+            index_2 = 3
+            index_3 = 2
+
+        box = [points[index_1], points[index_2],
+               points[index_3], points[index_4]]
+        return box, min(bounding_box[1])
+
 
 if __name__ == '__main__':
     main()

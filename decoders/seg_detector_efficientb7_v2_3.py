@@ -14,8 +14,8 @@ from concern.visualizer import Visualize
 # x = 640
 # y = 640
 
-x = 1280
-y = 736
+x = 800
+y = 800
 
 # x = 2048
 # y = 1152
@@ -326,7 +326,7 @@ class SegDetector_efficientb7_v2_3(nn.Module):
             # counter += 1
 
 
-            return binary, whole_binary
+            return binary
 
 
         if self.adaptive and self.training:

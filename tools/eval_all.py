@@ -4,7 +4,7 @@ from natsort import natsorted
 
 def main():
 
-    model_root = '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model/'
+    model_root = '/root/Storage/DB_v100/workspace/SegDetectorModel-seg_detector/efficentnet_b7/L1BalanceCELoss/model_exp22/'
 
     os.chdir('/root/Storage/DB_v100')
 

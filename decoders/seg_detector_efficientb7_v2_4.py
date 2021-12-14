@@ -11,10 +11,10 @@ import numpy as np
 import cv2
 from concern.visualizer import Visualize
 
-# x = 640
-# y = 640
-x = 2048
-y = 1152
+x = 800
+y = 800
+# x = 2048
+# y = 1152
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -215,19 +215,19 @@ class SegDetector_efficientb7_v2_4(nn.Module):
         self.binarize.apply(weights_init)
 
 
-        self.whole_binarize = nn.Sequential(
-            nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
-            nn.BatchNorm2d(inner_channels//4),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
-            nn.BatchNorm2d(inner_channels//4),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
-            nn.Sigmoid())
-        self.whole_binarize.apply(weights_init)
+        # self.whole_binarize = nn.Sequential(
+        #     nn.Conv2d(inner_channels, inner_channels // 4, 3, padding=1, bias=bias),
+        #     nn.BatchNorm2d(inner_channels//4),
+        #     nn.ReLU(inplace=True),
+        #     nn.ConvTranspose2d(inner_channels//4, inner_channels//4, 2, 2),
+        #     nn.BatchNorm2d(inner_channels//4),
+        #     nn.ReLU(inplace=True),
+        #     nn.ConvTranspose2d(inner_channels//4, 1, 2, 2),
+        #     nn.Sigmoid())
+        # self.whole_binarize.apply(weights_init)
 
-        self.emb_head = self._init_head(in_channels=256, hidden_dim=128)
-        self.emb_head.apply(weights_init)
+        # self.emb_head = self._init_head(in_channels=256, hidden_dim=128)
+        # self.emb_head.apply(weights_init)
 
         self.adaptive = adaptive
         if adaptive:
@@ -235,16 +235,16 @@ class SegDetector_efficientb7_v2_4(nn.Module):
                     inner_channels, serial=serial, smooth=smooth, bias=bias)
             self.thresh.apply(weights_init)
 
-    def _init_head(self, in_channels, hidden_dim):
-        emb_head = nn.Sequential(
-            nn.Conv2d(in_channels, hidden_dim, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim, 4, kernel_size=1, stride=1, padding=0),
-            nn.Upsample(size=(640, 640), mode='bilinear')
-        )
+    # def _init_head(self, in_channels, hidden_dim):
+    #     emb_head = nn.Sequential(
+    #         nn.Conv2d(in_channels, hidden_dim, kernel_size=3, stride=1, padding=1),
+    #         nn.BatchNorm2d(hidden_dim),
+    #         nn.ReLU(inplace=True),
+    #         nn.Conv2d(hidden_dim, 4, kernel_size=1, stride=1, padding=0),
+    #         nn.Upsample(size=(640, 640), mode='bilinear')
+    #     )
 
-        return emb_head
+    #     return emb_head
 
     def _init_thresh(self, inner_channels,
                      serial=False, smooth=False, bias=False):
@@ -294,15 +294,20 @@ class SegDetector_efficientb7_v2_4(nn.Module):
         E3 = self.E3(torch.cat((self.d_3(l3), self.u_3(l4)), 1))
 
         input_features = l1, E1, l2, E2, l3, E3, l4
-        l1, E1, l2, E2, l3, E3, l4 = self.fpn(input_features)
+        F1, E1, F2, E2, F3, E3, F4 = self.fpn(input_features)
 
-        l1 = self.last_conv(l1)
+        F1 = F1 + l1
+        F2 = F2 + l2
+        F3 = F3 + l3
+        F4 = F4 + l4
+
+        F1 = self.last_conv(l1)
         E1 = self.last_conv(E1)
-        l2 = self.last_conv(l2)
+        F2 = self.last_conv(l2)
         E2 = self.last_conv(E2)
-        l3 = self.last_conv(l3)
+        F3 = self.last_conv(l3)
         E3 = self.last_conv(E3)
-        l4 = self.last_conv(l4)
+        F4 = self.last_conv(l4)
 
         p1 = self.out1(l1)
         p2 = self.out2(E1)
@@ -316,20 +321,21 @@ class SegDetector_efficientb7_v2_4(nn.Module):
         # this is the pred module, not binarization module; 
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)
-        whole_binary = self.whole_binarize(fuse)
-        emb = self.emb_head(fuse)
+        # whole_binary = self.whole_binarize(fuse)
+        # emb = self.emb_head(fuse)
 
 
         if self.training:
-            result = OrderedDict(binary=binary, whole_binary=whole_binary, emb=emb)
+            # result = OrderedDict(binary=binary, whole_binary=whole_binary, emb=emb)
+            result = OrderedDict(binary=binary)
         else:
             # return binary
 
-            thresh = self.thresh(fuse)
+            # thresh = self.thresh(fuse)
 
-            cv2.imwrite('1_whole_binary.jpg', self.denormalize(whole_binary, 0))
-            cv2.imwrite('2_binary.jpg', self.denormalize(binary, 0))
-            cv2.imwrite('3_thresh.jpg', self.denormalize(thresh, 1))
+            # cv2.imwrite('1_whole_binary.jpg', self.denormalize(whole_binary, 0))
+            # cv2.imwrite('2_binary.jpg', self.denormalize(binary, 0))
+            # cv2.imwrite('3_thresh.jpg', self.denormalize(thresh, 1))
 
             return binary
             

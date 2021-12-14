@@ -65,8 +65,8 @@ class SegDetectorModel(nn.Module):
         if self.training:
             pred = self.model(data, training=self.training)
         else:
-            # pred = self.model(data, training=self.training)
-            pred, pred_whole = self.model(data, training=self.training)
+            pred = self.model(data, training=self.training)
+            # pred, pred_whole = self.model(data, training=self.training)
 
         # file_num = batch['filename'][0].replace('img', '').replace('.jpg', '')
         # file_w, file_h = batch['shape'][0]
